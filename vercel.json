@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/webhook",
+      "destination": "https://n8n.srv804235.hstgr.cloud/webhook/83e0a46f-e95a-47ee-803f-a3823f8adc21"
+    }
+  ]
+}
