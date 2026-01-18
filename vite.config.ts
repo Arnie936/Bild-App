@@ -6,10 +6,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/webhook': {
-        target: 'https://n8n.srv804235.hstgr.cloud',
+        target: 'Deine URL',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\/api\/webhook/, '/webhook/83e0a46f-e95a-47ee-803f-a3823f8adc21'),
+        rewrite: (path) => path.replace(/^\/api\/webhook/, 'Deine URL'),
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
             console.log('Proxy request to:', proxyReq.path)
