@@ -57,6 +57,7 @@ export default function GeneratorPage() {
           responseType: 'blob',
           headers: {
             'Content-Type': 'multipart/form-data',
+            'authentication': import.meta.env.VITE_WEBHOOK_AUTH,
           },
         }
       )
