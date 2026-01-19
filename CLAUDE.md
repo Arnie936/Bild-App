@@ -36,13 +36,24 @@ npm run preview  # Preview production build locally
 
 ## API Integration
 
-The app uses a Vite proxy to communicate with an n8n webhook:
-- **App calls:** `/api/webhook` (relative URL)
-- **Proxy forwards to:** n8n webhook (configured in `vite.config.ts`)
+The app calls `/api/webhook` (relative URL) which gets proxied to an n8n webhook:
 - **Method:** POST with multipart/form-data (image1, image2 fields)
 - **Response:** Blob (generated image)
 
-**Note:** The webhook URL is configured in `vite.config.ts` under `server.proxy`. Update the `target` and `rewrite` path to point to your own n8n instance.
+### Development (localhost)
+- Vite proxy handles requests (configured in `vite.config.ts`)
+- Update `N8N_BASE_URL` and `WEBHOOK_PATH` constants for your n8n instance
+
+### Production (Vercel)
+- Vercel rewrites handle requests (configured in `vercel.json`)
+- Update the `destination` URL to point to your n8n webhook
+
+## Deployment
+
+Hosted on **Vercel** with automatic deployments from GitHub.
+
+- `vercel.json` - Configures URL rewrites to proxy API requests to n8n
+- Push to `main` branch triggers automatic redeploy
 
 ## Code Conventions
 
