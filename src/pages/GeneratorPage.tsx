@@ -85,6 +85,8 @@ export default function GeneratorPage() {
   }
 
   const handleLogout = () => {
+    console.log('Logout button clicked!')
+    alert('Logout clicked!')
     signOut()
     navigate('/login', { replace: true })
   }
