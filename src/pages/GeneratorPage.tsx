@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Loader2, Sparkles, Download, AlertCircle, LogOut } from 'lucide-react'
 import UploadZone from '../components/UploadZone'
@@ -8,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext'
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
 export default function GeneratorPage() {
-  const navigate = useNavigate()
   const { signOut, profile } = useAuth()
   const [image1, setImage1] = useState<File | null>(null)
   const [image2, setImage2] = useState<File | null>(null)
@@ -84,19 +82,9 @@ export default function GeneratorPage() {
     }
   }
 
-  const handleLogout = async () => {
-    console.log('Logout button clicked!')
-    console.log('signOut function:', signOut)
-    console.log('navigate function:', navigate)
-    try {
-      await signOut()
-      console.log('signOut completed')
-      navigate('/login', { replace: true })
-      console.log('navigate called')
-    } catch (error) {
-      console.error('Logout error:', error)
-      alert('Error: ' + error)
-    }
+  const handleLogout = () => {
+    signOut()
+    window.location.href = '/login'
   }
 
   const canGenerate = image1 && image2 && status !== 'loading'
