@@ -84,11 +84,10 @@ export default function GeneratorPage() {
     }
   }
 
-  const handleLogout = useCallback(() => {
-    signOut().then(() => {
-      navigate('/login', { replace: true })
-    })
-  }, [signOut, navigate])
+  const handleLogout = () => {
+    signOut()
+    navigate('/login', { replace: true })
+  }
 
   const canGenerate = image1 && image2 && status !== 'loading'
 
@@ -192,8 +191,9 @@ export default function GeneratorPage() {
               </span>
             )}
             <button
+              type="button"
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               title="Abmelden"
             >
               <LogOut className="w-5 h-5" />
