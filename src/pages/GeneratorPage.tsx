@@ -84,11 +84,19 @@ export default function GeneratorPage() {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log('Logout button clicked!')
-    alert('Logout clicked!')
-    signOut()
-    navigate('/login', { replace: true })
+    console.log('signOut function:', signOut)
+    console.log('navigate function:', navigate)
+    try {
+      await signOut()
+      console.log('signOut completed')
+      navigate('/login', { replace: true })
+      console.log('navigate called')
+    } catch (error) {
+      console.error('Logout error:', error)
+      alert('Error: ' + error)
+    }
   }
 
   const canGenerate = image1 && image2 && status !== 'loading'
