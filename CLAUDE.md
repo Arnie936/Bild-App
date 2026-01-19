@@ -21,18 +21,32 @@ npm run preview  # Preview production build locally
 - Tailwind CSS for styling
 - Axios for HTTP requests
 - Lucide React for icons
+- Supabase for authentication and database
+- React Router DOM for routing
 
 ## Architecture
 
-**Entry Flow:** `index.html` → `src/main.tsx` → `src/App.tsx`
+**Entry Flow:** `index.html` → `src/main.tsx` (BrowserRouter + AuthProvider) → `src/App.tsx` (Routes)
 
-**App.tsx** - Main component containing:
-- State management via React hooks (useState, useCallback)
-- Dual image upload handling with previews
-- API integration with n8n webhook (POST multipart/form-data, blob response)
-- Loading/error/success UI states
+**Routing (App.tsx):**
+- `/login` - Login page
+- `/signup` - Registration page
+- `/` - Generator page (protected, requires authentication)
 
-**src/components/UploadZone.tsx** - Reusable drag-and-drop file upload component with preview support
+**Authentication:**
+- `src/lib/supabase.ts` - Supabase client initialization
+- `src/contexts/AuthContext.tsx` - Auth state management (user, session, profile)
+- `src/components/ProtectedRoute.tsx` - Route guard, redirects to /login if not authenticated
+- `src/types/auth.ts` - TypeScript interfaces for auth
+
+**Pages:**
+- `src/pages/LoginPage.tsx` - Email/password login form
+- `src/pages/SignupPage.tsx` - Registration with name, email, password
+- `src/pages/GeneratorPage.tsx` - Main image generator with logout button
+
+**Components:**
+- `src/components/UploadZone.tsx` - Drag-and-drop file upload with preview
+- `src/components/AuthLayout.tsx` - Layout wrapper for auth pages
 
 ## API Integration
 
@@ -48,12 +62,26 @@ The app calls `/api/webhook` (relative URL) which gets proxied to an n8n webhook
 - Vercel rewrites handle requests (configured in `vercel.json`)
 - Update the `destination` URL to point to your n8n webhook
 
+## Supabase Database
+
+**Tables:**
+- `profiles` - User profiles (id, created_at, email, full_name)
+  - RLS enabled with policies for own profile access
+  - Auto-created via trigger on auth.users insert
+
+**Environment Variables (`.env.local` for dev, Vercel for prod):**
+```
+VITE_SUPABASE_URL=https://vrantxrshlibvndrywoc.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-key>
+```
+
 ## Deployment
 
 Hosted on **Vercel** with automatic deployments from GitHub.
 
 - `vercel.json` - Configures URL rewrites to proxy API requests to n8n
 - Push to `main` branch triggers automatic redeploy
+- Environment variables must be set in Vercel dashboard (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
 
 ## Code Conventions
 
