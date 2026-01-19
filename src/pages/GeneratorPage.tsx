@@ -92,30 +92,13 @@ export default function GeneratorPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold text-primary mb-3">
-              KI-Bild-Generator
-            </h1>
-            <p className="text-gray-500 text-lg">
-              Lade ein Personenbild und ein Kleidungsstück hoch, um ein neues Bild zu generieren
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            {profile?.full_name && (
-              <span className="text-sm text-gray-600">
-                Hallo, {profile.full_name}
-              </span>
-            )}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Abmelden"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="hidden sm:inline">Abmelden</span>
-            </button>
-          </div>
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-primary mb-3">
+            KI-Bild-Generator
+          </h1>
+          <p className="text-gray-500 text-lg">
+            Lade ein Personenbild und ein Kleidungsstück hoch, um ein neues Bild zu generieren
+          </p>
         </div>
 
         {/* Upload Zones */}
@@ -194,8 +177,25 @@ export default function GeneratorPage() {
         )}
 
         {/* Footer */}
-        <div className="mt-12 text-center text-sm text-gray-400">
-          Powered by KI-Bildgenerierung
+        <div className="mt-12 flex items-center justify-between">
+          <div className="text-sm text-gray-400">
+            Powered by KI-Bildgenerierung
+          </div>
+          <div className="flex items-center gap-4">
+            {profile?.full_name && (
+              <span className="text-sm text-gray-600">
+                Hallo, {profile.full_name}
+              </span>
+            )}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Abmelden"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="hidden sm:inline">Abmelden</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
