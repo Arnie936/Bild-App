@@ -42,7 +42,7 @@ npm run preview  # Preview production build locally
 **Pages:**
 - `src/pages/LoginPage.tsx` - Email/password login form
 - `src/pages/SignupPage.tsx` - Registration with name, email, password
-- `src/pages/GeneratorPage.tsx` - Main image generator with logout button
+- `src/pages/GeneratorPage.tsx` - Main image generator (header centered, logout in footer right)
 
 **Components:**
 - `src/components/UploadZone.tsx` - Drag-and-drop file upload with preview
@@ -79,9 +79,15 @@ VITE_SUPABASE_ANON_KEY=<anon-key>
 
 Hosted on **Vercel** with automatic deployments from GitHub.
 
-- `vercel.json` - Configures URL rewrites to proxy API requests to n8n
+- `vercel.json` - Configures:
+  - API proxy rewrite (`/api/webhook` → n8n)
+  - SPA fallback (all routes → `/index.html` for React Router)
 - Push to `main` branch triggers automatic redeploy
 - Environment variables must be set in Vercel dashboard (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+
+**Supabase URL Configuration:**
+- Site URL: `https://bild-app.vercel.app`
+- Redirect URLs: `https://bild-app.vercel.app/**`, `http://localhost:5173/**`
 
 ## Code Conventions
 
