@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import axios from 'axios'
 import { Loader2, Sparkles, Download, AlertCircle, LogOut } from 'lucide-react'
 import UploadZone from '../components/UploadZone'
@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
 export default function GeneratorPage() {
-  const { signOut, profile } = useAuth()
+  const { signOut, profile, session } = useAuth()
   const [image1, setImage1] = useState<File | null>(null)
   const [image2, setImage2] = useState<File | null>(null)
   const [image1Preview, setImage1Preview] = useState<string | null>(null)
@@ -15,31 +15,73 @@ export default function GeneratorPage() {
   const [status, setStatus] = useState<Status>('idle')
   const [resultImage, setResultImage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const maxImageBytes = 8 * 1024 * 1024
+
+  useEffect(() => {
+    return () => {
+      if (image1Preview) URL.revokeObjectURL(image1Preview)
+    }
+  }, [image1Preview])
+
+  useEffect(() => {
+    return () => {
+      if (image2Preview) URL.revokeObjectURL(image2Preview)
+    }
+  }, [image2Preview])
+
+  useEffect(() => {
+    return () => {
+      if (resultImage) URL.revokeObjectURL(resultImage)
+    }
+  }, [resultImage])
 
   const handleImage1Select = useCallback((file: File | null) => {
-    setImage1(file)
-    if (file) {
-      setImage1Preview(URL.createObjectURL(file))
-    } else {
-      setImage1Preview(null)
+    if (file && (!file.type.startsWith('image/') || file.size > maxImageBytes)) {
+      setErrorMessage('Bitte wähle ein Bild bis maximal 8 MB aus.')
+      setStatus('error')
+      setImage1(null)
+      setImage1Preview((prev) => {
+        if (prev) URL.revokeObjectURL(prev)
+        return null
+      })
+      return
     }
+    setImage1(file)
+    setImage1Preview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return file ? URL.createObjectURL(file) : null
+    })
     setStatus('idle')
     setResultImage(null)
-  }, [])
+  }, [maxImageBytes])
 
   const handleImage2Select = useCallback((file: File | null) => {
-    setImage2(file)
-    if (file) {
-      setImage2Preview(URL.createObjectURL(file))
-    } else {
-      setImage2Preview(null)
+    if (file && (!file.type.startsWith('image/') || file.size > maxImageBytes)) {
+      setErrorMessage('Bitte wähle ein Bild bis maximal 8 MB aus.')
+      setStatus('error')
+      setImage2(null)
+      setImage2Preview((prev) => {
+        if (prev) URL.revokeObjectURL(prev)
+        return null
+      })
+      return
     }
+    setImage2(file)
+    setImage2Preview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return file ? URL.createObjectURL(file) : null
+    })
     setStatus('idle')
     setResultImage(null)
-  }, [])
+  }, [maxImageBytes])
 
   const handleGenerate = async () => {
     if (!image1 || !image2) return
+    if (!session?.access_token) {
+      setErrorMessage('Bitte melde dich erneut an.')
+      setStatus('error')
+      return
+    }
 
     setStatus('loading')
     setErrorMessage('')
@@ -57,13 +99,15 @@ export default function GeneratorPage() {
           responseType: 'blob',
           headers: {
             'Content-Type': 'multipart/form-data',
-            'authentication': import.meta.env.VITE_WEBHOOK_AUTH,
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       )
 
-      const imageUrl = URL.createObjectURL(response.data)
-      setResultImage(imageUrl)
+      setResultImage((prev) => {
+        if (prev) URL.revokeObjectURL(prev)
+        return URL.createObjectURL(response.data)
+      })
       setStatus('success')
     } catch (error) {
       console.error('Error generating image:', error)
