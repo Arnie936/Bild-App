@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true
+    let authInitialized = false
 
     const initializeAuth = async () => {
       try {
@@ -34,6 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Error getting session:', error)
+          // Clear potentially corrupt session data
+          await supabase.auth.signOut()
+          if (mounted) {
+            setSession(null)
+            setUser(null)
+            setProfile(null)
+          }
+          return
         }
 
         if (mounted) {
@@ -47,15 +56,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Auth initialization error:', error)
+        // On any error, clear auth state
+        if (mounted) {
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+        }
       } finally {
+        authInitialized = true
         if (mounted) setLoading(false)
       }
     }
 
-    initializeAuth()
+    // Timeout fallback - if auth takes longer than 3 seconds, stop loading
+    const timeout = setTimeout(() => {
+      if (mounted && !authInitialized) {
+        console.warn('Auth initialization timeout - forcing load complete')
+        setSession(null)
+        setUser(null)
+        setProfile(null)
+        setLoading(false)
+      }
+    }, 3000)
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    initializeAuth().finally(() => clearTimeout(timeout))
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
+        // Handle token refresh errors
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.warn('Token refresh failed, signing out')
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+
         setSession(session)
         setUser(session?.user ?? null)
 
