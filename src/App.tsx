@@ -5,7 +5,6 @@ import GeneratorPage from './pages/GeneratorPage'
 import PricingPage from './pages/PricingPage'
 import SuccessPage from './pages/SuccessPage'
 import ProtectedRoute from './components/ProtectedRoute'
-import SubscribedRoute from './components/SubscribedRoute'
 
 function App() {
   return (
