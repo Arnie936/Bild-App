@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import type { AuthContextType, Profile } from '../types/auth'
+import type { AuthContextType, Profile, Subscription } from '../types/auth'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -9,6 +9,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -24,6 +25,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return data as Profile
   }, [])
+
+  const fetchSubscription = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching subscription:', error.message)
+      return null
+    }
+    return data as Subscription | null
+  }, [])
+
+  const refreshSubscription = useCallback(async () => {
+    if (user) {
+      const subscriptionData = await fetchSubscription(user.id)
+      setSubscription(subscriptionData)
+    }
+  }, [user, fetchSubscription])
 
   useEffect(() => {
     let mounted = true
@@ -50,8 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(session?.user ?? null)
 
           if (session?.user) {
-            const profileData = await fetchProfile(session.user.id)
-            if (mounted) setProfile(profileData)
+            const [profileData, subscriptionData] = await Promise.all([
+              fetchProfile(session.user.id),
+              fetchSubscription(session.user.id)
+            ])
+            if (mounted) {
+              setProfile(profileData)
+              setSubscription(subscriptionData)
+            }
           }
         }
       } catch (error) {
@@ -61,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null)
           setUser(null)
           setProfile(null)
+          setSubscription(null)
         }
       } finally {
         authInitialized = true
@@ -75,13 +104,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null)
         setUser(null)
         setProfile(null)
+        setSubscription(null)
         setLoading(false)
       }
     }, 3000)
 
     initializeAuth().finally(() => clearTimeout(timeout))
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
         // Handle token refresh errors
         if (event === 'TOKEN_REFRESHED' && !session) {
@@ -97,10 +127,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const profileData = await fetchProfile(session.user.id)
-          if (mounted) setProfile(profileData)
+          const [profileData, subscriptionData] = await Promise.all([
+            fetchProfile(session.user.id),
+            fetchSubscription(session.user.id)
+          ])
+          if (mounted) {
+            setProfile(profileData)
+            setSubscription(subscriptionData)
+          }
         } else {
           setProfile(null)
+          setSubscription(null)
         }
         setLoading(false)
       }
@@ -108,9 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      authSubscription.unsubscribe()
     }
-  }, [fetchProfile])
+  }, [fetchProfile, fetchSubscription])
 
   const signUp = useCallback(async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
@@ -143,17 +180,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(null)
       setUser(null)
       setProfile(null)
+      setSubscription(null)
     }
   }, [])
+
+  const isSubscribed = subscription?.status === 'active'
 
   const value: AuthContextType = {
     user,
     session,
     profile,
+    subscription,
+    isSubscribed,
     loading,
     signUp,
     signIn,
     signOut,
+    refreshSubscription,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
