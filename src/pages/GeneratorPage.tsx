@@ -139,7 +139,7 @@ export default function GeneratorPage() {
     window.location.href = '/login'
   }
 
-  const canGenerate = isSubscribed && image1 && image2 && status !== 'loading'
+  const canGenerate = isSubscribed && !subscriptionLoading && image1 && image2 && status !== 'loading'
 
   return (
     <div className="min-h-screen bg-background">
@@ -154,7 +154,7 @@ export default function GeneratorPage() {
           </p>
         </div>
 
-        {!isSubscribed && (
+        {!isSubscribed && !subscriptionLoading && (
           <div className="mb-8 p-5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
