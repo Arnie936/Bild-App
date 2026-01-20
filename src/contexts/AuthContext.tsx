@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single()
 
     if (error) {
-      console.error('Error fetching profile:', error)
+      console.error('Error fetching profile:', error.message)
       return null
     }
     return data as Profile
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
-          console.error('Error getting session:', error)
+          console.error('Error getting session:', error.message)
           // Clear potentially corrupt session data
           await supabase.auth.signOut()
           if (mounted) {
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error)
+        console.error('Auth initialization error:', error instanceof Error ? error.message : 'Unknown error')
         // On any error, clear auth state
         if (mounted) {
           setSession(null)
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut()
     } catch (error) {
-      console.error('Sign out error:', error)
+      console.error('Sign out error:', error instanceof Error ? error.message : 'Unknown error')
     } finally {
       // Always clear state, even if signOut fails
       setSession(null)

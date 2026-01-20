@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const N8N_WEBHOOK_URL = 'https://n8n.srv804235.hstgr.cloud/webhook/83e0a46f-e95a-47ee-803f-a3823f8adc21'
+// Webhook URL must be set via environment variable in Vercel dashboard
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
 
@@ -99,6 +100,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await validateUser(req)
 
+    if (!N8N_WEBHOOK_URL) {
+      return res.status(500).json({ error: 'Webhook not configured' })
+    }
+
     const rawBody = await getRawBody(req, MAX_BODY_BYTES)
 
     const response = await fetch(N8N_WEBHOOK_URL, {
@@ -130,7 +135,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Auth not configured' })
       }
     }
-    console.error('Webhook proxy error:', error)
+    // Log only error message, not full stack trace
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Webhook proxy error:', errorMessage)
     res.status(500).json({ error: 'Failed to proxy request' })
   }
 }
