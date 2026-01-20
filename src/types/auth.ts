@@ -26,6 +26,7 @@ export interface AuthContextType {
   subscription: Subscription | null
   isSubscribed: boolean
   loading: boolean
+  subscriptionLoading: boolean
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
