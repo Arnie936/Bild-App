@@ -17,7 +17,7 @@ npm run preview  # Preview production build locally
 ## Tech Stack
 
 - React 18 with TypeScript (strict mode)
-- Vite for bundling and dev server
+- Vite 5 for bundling and dev server
 - Tailwind CSS for styling
 - Axios for HTTP requests
 - Lucide React for icons
@@ -50,17 +50,48 @@ npm run preview  # Preview production build locally
 
 ## API Integration
 
-The app calls `/api/webhook` (relative URL) which gets proxied to an n8n webhook:
+The app calls `/api/webhook` (relative URL) which is handled by a Vercel serverless function:
 - **Method:** POST with multipart/form-data (image1, image2 fields)
+- **Authentication:** Bearer token (Supabase session) + server-side validation
 - **Response:** Blob (generated image)
+
+**Serverless Function:** `api/webhook.ts`
+- Validates user via Supabase auth
+- Rate limiting (30 requests/minute per IP)
+- Proxies request to n8n webhook
+- All sensitive URLs/tokens loaded from environment variables
 
 ### Development (localhost)
 - Vite proxy handles requests (configured in `vite.config.ts`)
-- Update `N8N_BASE_URL` and `WEBHOOK_PATH` constants for your n8n instance
+- Set `N8N_BASE_URL` and `N8N_WEBHOOK_PATH` in `.env.local`
 
 ### Production (Vercel)
-- Vercel rewrites handle requests (configured in `vercel.json`)
-- Update the `destination` URL to point to your n8n webhook
+- Serverless function at `api/webhook.ts` handles requests
+- Security headers configured in `vercel.json`
+
+## Environment Variables
+
+See `.env.example` for full template. Copy to `.env.local` for development.
+
+**Client-side (VITE_ prefix, embedded at build time):**
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+**Server-side (Vercel only, no VITE_ prefix):**
+```
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/your-webhook-id
+WEBHOOK_AUTH=your-secure-webhook-token
+```
+
+**Local development proxy:**
+```
+N8N_BASE_URL=https://your-n8n-instance.com
+N8N_WEBHOOK_PATH=/webhook/your-webhook-id
+```
 
 ## Supabase Database
 
@@ -69,25 +100,28 @@ The app calls `/api/webhook` (relative URL) which gets proxied to an n8n webhook
   - RLS enabled with policies for own profile access
   - Auto-created via trigger on auth.users insert
 
-**Environment Variables (`.env.local` for dev, Vercel for prod):**
-```
-VITE_SUPABASE_URL=https://vrantxrshlibvndrywoc.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon-key>
-```
-
 ## Deployment
 
 Hosted on **Vercel** with automatic deployments from GitHub.
 
 - `vercel.json` - Configures:
-  - API proxy rewrite (`/api/webhook` → n8n)
+  - Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
   - SPA fallback (all routes → `/index.html` for React Router)
+- `api/webhook.ts` - Serverless function for n8n proxy
 - Push to `main` branch triggers automatic redeploy
-- Environment variables must be set in Vercel dashboard (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+- All environment variables must be set in Vercel dashboard
 
 **Supabase URL Configuration:**
 - Site URL: `https://bild-app.vercel.app`
 - Redirect URLs: `https://bild-app.vercel.app/**`, `http://localhost:5173/**`
+
+## Security
+
+- No hardcoded secrets in source code (all via environment variables)
+- Security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy
+- Server-side user validation via Supabase auth
+- Rate limiting on webhook endpoint
+- Error messages sanitized (no stack traces in logs)
 
 ## Code Conventions
 
