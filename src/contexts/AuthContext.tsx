@@ -75,6 +75,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
+    // Fallback timeout - just set loading to false after 5 seconds
+    const fallbackTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth fallback timeout - setting loading to false')
+        setLoading(false)
+      }
+    }, 5000)
+
     const initializeAuth = async () => {
       try {
         console.log('Starting auth initialization...')
@@ -146,8 +154,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false
+      clearTimeout(fallbackTimeout)
       authSubscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchProfile])
 
   // Separate effect for subscription - runs after user is set
