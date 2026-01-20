@@ -35,11 +35,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchSubscription = useCallback(async (userId: string): Promise<Subscription | null> => {
     console.log('Fetching subscription for user:', userId)
     try {
-      const { data, error } = await supabase
+      // Add timeout wrapper to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Subscription fetch timeout')), 8000)
+      )
+
+      const fetchPromise = supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle()
+
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise])
 
       console.log('Subscription result:', { data, error })
 
@@ -49,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return data as Subscription | null
     } catch (e) {
-      console.error('Subscription fetch exception:', e)
+      console.error('Subscription fetch exception:', e instanceof Error ? e.message : e)
       return null
     }
   }, [])
