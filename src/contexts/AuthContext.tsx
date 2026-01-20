@@ -27,14 +27,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const fetchSubscription = useCallback(async (userId: string) => {
+    console.log('Fetching subscription for user:', userId)
     const { data, error } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
       .single()
 
+    console.log('Subscription result:', { data, error })
+
     if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching subscription:', error.message)
+      console.error('Error fetching subscription:', error.message, error.code)
       return null
     }
     return data as Subscription | null
