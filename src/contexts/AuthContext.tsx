@@ -34,33 +34,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchSubscription = useCallback(async (userId: string): Promise<Subscription | null> => {
     console.log('Fetching subscription for user:', userId)
-    setSubscriptionLoading(true)
     try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('Subscription fetch timeout')), 5000)
-      )
-
-      const fetchPromise = supabase
+      const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
-        .single()
-
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise.then(() => ({ data: null, error: null }))]) as { data: Subscription | null, error: { message: string, code: string } | null }
+        .maybeSingle()
 
       console.log('Subscription result:', { data, error })
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching subscription:', error.message, error.code)
+      if (error) {
+        console.error('Error fetching subscription:', error.message)
         return null
       }
-      return data
+      return data as Subscription | null
     } catch (e) {
       console.error('Subscription fetch exception:', e)
       return null
-    } finally {
-      setSubscriptionLoading(false)
     }
   }, [])
 
@@ -168,9 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    setSubscriptionLoading(true)
     console.log('User changed, fetching subscription...')
     fetchSubscription(user.id).then(data => {
+      console.log('Setting subscription:', data?.status)
       setSubscription(data)
+      setSubscriptionLoading(false)
     })
   }, [user, fetchSubscription])
 
