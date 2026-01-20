@@ -31,9 +31,9 @@ function App() {
       <Route
         path="/"
         element={
-          <SubscribedRoute>
+          <ProtectedRoute>
             <GeneratorPage />
-          </SubscribedRoute>
+          </ProtectedRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
