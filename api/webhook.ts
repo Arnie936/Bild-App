@@ -112,7 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'authentication': process.env.WEBHOOK_AUTH || '',
         'content-type': contentType,
       },
-      body: rawBody,
+      body: new Uint8Array(rawBody),
     })
 
     const responseContentType = response.headers.get('content-type')
