@@ -54,7 +54,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
 
-        if (session.mode === 'subscription' && session.subscription && session.customer_email) {
+        // Email kann an verschiedenen Stellen sein
+        const customerEmail = session.customer_email || session.customer_details?.email
+
+        console.log('Checkout session completed:', {
+          mode: session.mode,
+          subscription: session.subscription,
+          customer: session.customer,
+          customerEmail,
+        })
+
+        if (session.mode === 'subscription' && session.subscription) {
+          if (!customerEmail) {
+            console.error('No customer email found in session')
+            break
+          }
+
           // Find user by email
           const { data: userData, error: userError } = await supabase.auth.admin.listUsers()
 
@@ -63,10 +78,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             break
           }
 
-          const user = userData.users.find(u => u.email === session.customer_email)
+          const user = userData.users.find(u => u.email?.toLowerCase() === customerEmail.toLowerCase())
 
           if (!user) {
-            console.error('User not found for email:', session.customer_email)
+            console.error('User not found for email:', customerEmail)
             break
           }
 
