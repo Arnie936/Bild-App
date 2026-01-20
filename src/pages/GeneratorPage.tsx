@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Loader2, Sparkles, Download, AlertCircle, LogOut } from 'lucide-react'
 import UploadZone from '../components/UploadZone'
@@ -7,7 +8,8 @@ import { useAuth } from '../contexts/AuthContext'
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
 export default function GeneratorPage() {
-  const { signOut, profile, session } = useAuth()
+  const navigate = useNavigate()
+  const { signOut, profile, session, isSubscribed, subscriptionLoading } = useAuth()
   const [image1, setImage1] = useState<File | null>(null)
   const [image2, setImage2] = useState<File | null>(null)
   const [image1Preview, setImage1Preview] = useState<string | null>(null)
@@ -77,6 +79,11 @@ export default function GeneratorPage() {
 
   const handleGenerate = async () => {
     if (!image1 || !image2) return
+    if (!isSubscribed) {
+      setErrorMessage('Bitte aktiviere dein Abo, um Bilder zu generieren.')
+      setStatus('error')
+      return
+    }
     if (!session?.access_token) {
       setErrorMessage('Bitte melde dich erneut an.')
       setStatus('error')
@@ -132,7 +139,7 @@ export default function GeneratorPage() {
     window.location.href = '/login'
   }
 
-  const canGenerate = image1 && image2 && status !== 'loading'
+  const canGenerate = isSubscribed && image1 && image2 && status !== 'loading'
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,6 +153,34 @@ export default function GeneratorPage() {
             Lade ein Personenbild und ein Kleidungsstück hoch, um ein neues Bild zu generieren
           </p>
         </div>
+
+        {!isSubscribed && (
+          <div className="mb-8 p-5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800">
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold">Abo erforderlich</p>
+              <p className="text-sm text-amber-700">
+                Du bist angemeldet, aber brauchst ein aktives Abo, um zu starten.
+              </p>
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/pricing')}
+                  className="px-4 py-2 bg-accent text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                >
+                  Zum Abo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {subscriptionLoading && (
+          <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Abo-Status wird geprüft...
+          </div>
+        )}
 
         {/* Upload Zones */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
