@@ -166,13 +166,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fallbackTimeout = setTimeout(() => {
       if (mounted) {
-        console.warn('Subscription fallback timeout - setting loading to false')
+        console.warn('Subscription fallback timeout (10s) - setting loading to false')
         setSubscriptionLoading(false)
       }
-    }, 5000)
+    }, 10000)
 
+    console.log('Starting subscription fetch...')
     fetchSubscription(user.id)
       .then(data => {
+        console.log('Subscription fetch completed, data:', data)
         if (mounted) setSubscription(data)
       })
       .catch(error => {
@@ -180,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mounted) setSubscription(null)
       })
       .finally(() => {
+        console.log('Subscription fetch finally block')
         if (mounted) setSubscriptionLoading(false)
         clearTimeout(fallbackTimeout)
       })
