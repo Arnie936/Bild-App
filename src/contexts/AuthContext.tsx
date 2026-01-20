@@ -152,19 +152,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Separate effect for subscription - runs after user is set
   useEffect(() => {
+    let mounted = true
+
     if (!user) {
       setSubscription(null)
       setSubscriptionLoading(false)
-      return
+      return () => {
+        mounted = false
+      }
     }
 
     setSubscriptionLoading(true)
-    console.log('User changed, fetching subscription...')
-    fetchSubscription(user.id).then(data => {
-      console.log('Setting subscription:', data?.status)
-      setSubscription(data)
-      setSubscriptionLoading(false)
-    })
+
+    const fallbackTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('Subscription fallback timeout - setting loading to false')
+        setSubscriptionLoading(false)
+      }
+    }, 5000)
+
+    fetchSubscription(user.id)
+      .then(data => {
+        if (mounted) setSubscription(data)
+      })
+      .catch(error => {
+        console.error('Subscription fetch error:', error instanceof Error ? error.message : error)
+        if (mounted) setSubscription(null)
+      })
+      .finally(() => {
+        if (mounted) setSubscriptionLoading(false)
+        clearTimeout(fallbackTimeout)
+      })
+
+    return () => {
+      mounted = false
+      clearTimeout(fallbackTimeout)
+    }
   }, [user, fetchSubscription])
 
   const signUp = useCallback(async (email: string, password: string, fullName: string) => {
