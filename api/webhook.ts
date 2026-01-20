@@ -110,10 +110,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: rawBody,
     })
 
-    const contentType = response.headers.get('content-type')
+    const responseContentType = response.headers.get('content-type')
     const buffer = await response.arrayBuffer()
 
-    res.setHeader('Content-Type', contentType || 'application/octet-stream')
+    res.setHeader('Content-Type', responseContentType || 'application/octet-stream')
     res.status(response.status).send(Buffer.from(buffer))
   } catch (error) {
     if (error instanceof Error) {
