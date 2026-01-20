@@ -56,7 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
       try {
+        console.log('Starting auth initialization...')
+        const startTime = Date.now()
         const { data: { session }, error } = await supabase.auth.getSession()
+        console.log('getSession completed in', Date.now() - startTime, 'ms')
 
         if (error) {
           console.error('Error getting session:', error.message)
@@ -75,13 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(session?.user ?? null)
 
           if (session?.user) {
+            console.log('Fetching profile and subscription...')
+            const fetchStart = Date.now()
             const [profileData, subscriptionData] = await Promise.all([
               fetchProfile(session.user.id),
               fetchSubscription(session.user.id)
             ])
+            console.log('Profile and subscription fetched in', Date.now() - fetchStart, 'ms')
             if (mounted) {
               setProfile(profileData)
               setSubscription(subscriptionData)
+              console.log('Auth complete, subscription status:', subscriptionData?.status)
             }
           }
         }
@@ -100,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Timeout fallback - if auth takes longer than 3 seconds, stop loading
+    // Timeout fallback - if auth takes longer than 10 seconds, stop loading
     const timeout = setTimeout(() => {
       if (mounted && !authInitialized) {
         console.warn('Auth initialization timeout - forcing load complete')
@@ -110,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSubscription(null)
         setLoading(false)
       }
-    }, 3000)
+    }, 10000)
 
     initializeAuth().finally(() => clearTimeout(timeout))
 
