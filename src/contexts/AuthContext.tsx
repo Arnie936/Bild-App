@@ -125,6 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event)
       if (mounted) {
+        // Token refresh with valid session - just update session, don't reload everything
+        if (event === 'TOKEN_REFRESHED' && session) {
+          console.log('Token refreshed, keeping existing data')
+          setSession(session)
+          return
+        }
+
         if (event === 'TOKEN_REFRESHED' && !session) {
           console.warn('Token refresh failed, signing out')
           setSession(null)
@@ -135,13 +142,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
+        // Only update user if it actually changed (prevents unnecessary subscription refetch)
+        const newUserId = session?.user?.id
         setSession(session)
-        setUser(session?.user ?? null)
 
         if (session?.user) {
+          setUser(prevUser => {
+            // If same user, don't trigger subscription refetch
+            if (prevUser?.id === newUserId) {
+              console.log('Same user, skipping refetch')
+              return prevUser
+            }
+            return session.user
+          })
           const profileData = await fetchProfile(session.user.id)
           if (mounted) setProfile(profileData)
         } else {
+          setUser(null)
           setProfile(null)
           setSubscription(null)
         }
@@ -182,11 +199,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchSubscription(user.id)
       .then(data => {
         console.log('Subscription fetch completed, data:', data)
-        if (mounted) setSubscription(data)
+        if (mounted) {
+          // Only update if we got data, otherwise keep existing subscription
+          if (data !== null) {
+            setSubscription(data)
+          } else {
+            console.log('Fetch returned null, keeping existing subscription')
+            setSubscription(prev => prev) // Keep existing
+          }
+        }
       })
       .catch(error => {
         console.error('Subscription fetch error:', error instanceof Error ? error.message : error)
-        if (mounted) setSubscription(null)
+        // On error, keep existing subscription instead of setting to null
+        console.log('Keeping existing subscription due to error')
       })
       .finally(() => {
         console.log('Subscription fetch finally block')
