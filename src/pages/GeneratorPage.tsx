@@ -7,6 +7,15 @@ import { useAuth } from '../contexts/AuthContext'
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
+// Vorgefertigte Kleidungsbilder aus public/kleidung
+const CLOTHING_ITEMS = [
+  { id: 1, src: '/kleidung/Screenshot 2026-01-16 200107.png', name: 'Outfit 1' },
+  { id: 2, src: '/kleidung/Screenshot 2026-01-16 200135.png', name: 'Outfit 2' },
+  { id: 3, src: '/kleidung/Screenshot 2026-01-16 200222.png', name: 'Outfit 3' },
+  { id: 4, src: '/kleidung/Screenshot 2026-01-20 125707.png', name: 'Outfit 4' },
+  { id: 5, src: '/kleidung/Screenshot 2026-01-20 125737.png', name: 'Outfit 5' },
+]
+
 export default function GeneratorPage() {
   const navigate = useNavigate()
   const { signOut, profile, session, isSubscribed, subscriptionLoading } = useAuth()
@@ -76,6 +85,27 @@ export default function GeneratorPage() {
     setStatus('idle')
     setResultImage(null)
   }, [maxImageBytes])
+
+  const handleClothingSelect = useCallback(async (clothingSrc: string) => {
+    try {
+      const response = await fetch(clothingSrc)
+      const blob = await response.blob()
+      const fileName = clothingSrc.split('/').pop() || 'clothing.png'
+      const file = new File([blob], fileName, { type: blob.type })
+
+      setImage2(file)
+      setImage2Preview((prev) => {
+        if (prev) URL.revokeObjectURL(prev)
+        return URL.createObjectURL(blob)
+      })
+      setStatus('idle')
+      setResultImage(null)
+    } catch (error) {
+      console.error('Error loading clothing image:', error)
+      setErrorMessage('Fehler beim Laden des Kleidungsstücks.')
+      setStatus('error')
+    }
+  }, [])
 
   const handleGenerate = async () => {
     if (!image1 || !image2) return
@@ -190,12 +220,34 @@ export default function GeneratorPage() {
             onImageSelect={handleImage1Select}
             previewUrl={image1Preview}
           />
-          <UploadZone
-            label="Kleidungsstück"
-            description="Bild des Kleidungsstücks hochladen"
-            onImageSelect={handleImage2Select}
-            previewUrl={image2Preview}
-          />
+          <div className="space-y-4">
+            <UploadZone
+              label="Kleidungsstück"
+              description="Bild hochladen oder aus Sortiment wählen"
+              onImageSelect={handleImage2Select}
+              previewUrl={image2Preview}
+            />
+            {/* Kleidungssortiment */}
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-medium text-gray-600 mb-3">Oder aus Sortiment wählen:</p>
+              <div className="grid grid-cols-5 gap-2">
+                {CLOTHING_ITEMS.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleClothingSelect(item.src)}
+                    className="relative aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-accent transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                    title={item.name}
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Generate Button */}
